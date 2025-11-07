@@ -1,0 +1,13 @@
+{
+  "http": [
+    { "name": "svcA", "url": "$HTTP_1" },
+    { "name": "svcB", "url": "$HTTP_2" },
+    { "name": "svcC", "url": "$HTTP_3" }
+  ],
+  "ws": [
+    { "name": "wsA", "url": "$WS_1" },
+    { "name": "wsB", "url": "$WS_2" },
+    { "name": "wsC", "url": "$WS_3" }
+  ]
+}
+
