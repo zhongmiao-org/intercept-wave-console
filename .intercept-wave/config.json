@@ -1,0 +1,16 @@
+{
+    "version": "3.0",
+    "proxyGroups": [
+        {
+            "id": "a3c501b2-15f1-4e41-b471-6057cb5ee1cd",
+            "name": "User Service",
+            "port": 8888,
+            "interceptPrefix": "/api",
+            "baseUrl": "http://localhost:9000",
+            "stripPrefix": true,
+            "globalCookie": "",
+            "enabled": true,
+            "mockApis": []
+        }
+    ]
+}
