@@ -4,6 +4,9 @@
       <n-form-item label="目标HTTP服务">
         <n-select v-model:value="selected" :options="httpOptions" style="min-width: 280px" />
       </n-form-item>
+      <n-form-item label="预设">
+        <n-select v-model:value="preset" :options="presetOptions" style="min-width: 320px" @update:value="applyPreset" />
+      </n-form-item>
       <n-form-item label="方法">
         <n-radio-group v-model:value="method" name="method">
           <n-radio value="GET">GET</n-radio>
@@ -12,6 +15,18 @@
       </n-form-item>
       <n-form-item label="路径追加 (可选)">
         <n-input v-model:value="path" placeholder="例如: /ping 或 ping，留空则不追加" />
+      </n-form-item>
+      <n-form-item label="Authorization(可选)">
+        <n-input v-model:value="auth" placeholder="Bearer ... 或 Basic ..." />
+      </n-form-item>
+      <n-form-item label="X-Request-Id(可选)">
+        <n-input v-model:value="reqId" placeholder="自定义请求ID，/headers 会回显" />
+      </n-form-item>
+      <n-form-item label="User-Agent(可选)">
+        <n-input v-model:value="ua" placeholder="自定义 UA，/headers 会回显" />
+      </n-form-item>
+      <n-form-item label="凭据(跨域)">
+        <n-checkbox v-model:checked="withCreds">credentials: include</n-checkbox>
       </n-form-item>
       <n-form-item v-if="method === 'POST'" label="Body(JSON)">
         <n-input type="textarea" :rows="6" v-model:value="body" placeholder='{"hello":"world"}' />
@@ -29,6 +44,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRuntimeStore } from '../stores/runtime';
+import { useHttpTesterVM } from '../viewmodels/httpTester';
 import {
   NForm,
   NFormItem,
@@ -39,56 +55,48 @@ import {
   NRadio,
   NSpace,
   NCode,
-  NH3
+  NH3,
+  NCheckbox
 } from 'naive-ui';
 
 const runtime = useRuntimeStore();
 const selected = ref<string | null>(null);
-const method = ref<'GET' | 'POST'>('GET');
-const path = ref('');
-const body = ref('');
-const lastReq = ref('');
-const lastRes = ref('');
+const vm = useHttpTesterVM();
+const { method, path, body, lastReq, lastRes, auth, reqId, ua, withCreds } = vm;
+const preset = ref<string | null>(null);
 
 const httpOptions = computed(() => runtime.http.map((h) => ({ label: `${h.name} (${h.url})`, value: h.url })));
 
-function joinUrl(base: string, extra: string): string {
-  const b = base.trim();
-  const e = (extra || '').trim();
-  if (!e) return b;
-  const baseHasSlash = b.endsWith('/');
-  const extraHasSlash = e.startsWith('/');
-  if (baseHasSlash && extraHasSlash) return b + e.slice(1);
-  if (!baseHasSlash && !extraHasSlash) return b + '/' + e;
-  return b + e;
+type PresetItem = { label: string; value: string; method: 'GET' | 'POST'; path: string; body?: any };
+const presets: PresetItem[] = [
+  { label: 'GET / (服务信息)', value: 'root', method: 'GET', path: '/' },
+  { label: 'GET /health', value: 'health', method: 'GET', path: '/health' },
+  { label: 'GET /status/200', value: 'status200', method: 'GET', path: '/status/200' },
+  { label: 'GET /delay/150', value: 'delay150', method: 'GET', path: '/delay/150' },
+  { label: 'GET /headers', value: 'headers', method: 'GET', path: '/headers' },
+  { label: 'GET /cookies', value: 'cookies', method: 'GET', path: '/cookies' },
+  { label: 'GET /large?size=1024', value: 'large1k', method: 'GET', path: '/large?size=1024' },
+  { label: 'ANY /echo', value: 'echo', method: 'POST', path: '/echo', body: { hello: 'world' } },
+  { label: 'REST 列表 GET /rest/items', value: 'restList', method: 'GET', path: '/rest/items' },
+  { label: 'REST 创建 POST /rest/items', value: 'restCreate', method: 'POST', path: '/rest/items', body: { name: 'demo' } },
+  { label: 'GET /api/user/info (9000)', value: 'userInfo', method: 'GET', path: '/api/user/info' },
+  { label: 'GET /api/posts (9000)', value: 'userPosts', method: 'GET', path: '/api/posts' },
+  { label: 'GET /order-api/orders (9001)', value: 'orders', method: 'GET', path: '/order-api/orders' },
+  { label: 'POST /order-api/orders (9001)', value: 'orderCreate', method: 'POST', path: '/order-api/orders', body: { amount: 199 } },
+  { label: 'GET /order-api/order/1/submit (9001)', value: 'orderSubmit', method: 'GET', path: '/order-api/order/1/submit' },
+  { label: 'GET /pay-api/checkout (9002)', value: 'checkout', method: 'GET', path: '/pay-api/checkout' }
+];
+const presetOptions = computed(() => presets.map((p) => ({ label: p.label, value: p.value })));
+
+function applyPreset(v: string | null) {
+  const p = presets.find((x) => x.value === v!);
+  if (!p) return;
+  method.value = p.method;
+  path.value = p.path;
+  body.value = p.body ? JSON.stringify(p.body, null, 2) : '';
 }
 
 async function send() {
-  if (!selected.value) return;
-  const url = joinUrl(selected.value, path.value);
-  const init: RequestInit = { method: method.value };
-  if (method.value === 'POST' && body.value) {
-    init.headers = { 'Content-Type': 'application/json' };
-    try {
-      init.body = JSON.stringify(JSON.parse(body.value));
-    } catch {
-      init.body = body.value; // 原样发出
-    }
-  }
-
-  lastReq.value = JSON.stringify({ url, ...init, body: init.body ?? undefined }, null, 2);
-  const t0 = performance.now();
-  try {
-    const res = await fetch(url, init);
-    const text = await res.text();
-    let parsed: any = text;
-    try { parsed = JSON.parse(text); } catch {}
-    const ms = Math.round(performance.now() - t0);
-    lastRes.value = JSON.stringify({ ok: res.ok, status: res.status, ms, headers: Object.fromEntries(res.headers.entries()), body: parsed }, null, 2);
-    runtime.log('http', `${method.value} ${url} -> ${res.status} (${ms}ms)`);
-  } catch (e: any) {
-    lastRes.value = JSON.stringify({ error: String(e?.message || e) }, null, 2);
-    runtime.log('http', `${method.value} ${url} -> ERROR: ${String(e?.message || e)}`);
-  }
+  await vm.send(selected.value);
 }
 </script>

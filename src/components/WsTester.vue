@@ -4,8 +4,14 @@
       <n-form-item label="目标WS服务">
         <n-select v-model:value="selected" :options="wsOptions" style="min-width: 320px" />
       </n-form-item>
+      <n-form-item label="令牌(token)">
+        <n-input v-model:value="token" placeholder="ws 校验令牌，如 zhongmiao-org-token" />
+      </n-form-item>
       <n-form-item label="路径追加 (可选)">
         <n-input v-model:value="path" placeholder="与上游一致，例如: /socket 或 socket，留空则不追加" />
+      </n-form-item>
+      <n-form-item label="间隔ms(可选)">
+        <n-input v-model:value="interval" placeholder="部分路径支持，如 /ws/ticker" />
       </n-form-item>
       <n-space>
         <n-button type="primary" :disabled="!selected || !!socket" @click="connect">连接</n-button>
@@ -26,87 +32,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRuntimeStore } from '../stores/runtime';
+import { useWsTesterVM } from '../viewmodels/wsTester';
 import { NForm, NFormItem, NInput, NButton, NSelect, NSpace, NCode, NH3 } from 'naive-ui';
 
 const runtime = useRuntimeStore();
 const selected = ref<string | null>(null);
-const socket = ref<WebSocket | null>(null);
-const outgoing = ref('');
-const logs = ref<string[]>([]);
-const path = ref('');
+const vm = useWsTesterVM();
+const { socket, outgoing, logs, path, token, interval } = vm;
 
 const wsOptions = computed(() => runtime.ws.map((w) => ({ label: `${w.name} (${w.url})`, value: w.url })));
-const logText = computed(() => logs.value.join('\n'));
+const logText = vm.logText;
 
-function addLog(type: string, data: any) {
-  const ts = new Date().toLocaleTimeString();
-  const line = `[${ts}] ${type}: ${typeof data === 'string' ? data : JSON.stringify(data)}`;
-  logs.value.unshift(line);
-  if (logs.value.length > 300) logs.value.pop();
-}
-
-function joinUrl(base: string, extra: string): string {
-  const b = base.trim();
-  const e = (extra || '').trim();
-  if (!e) return b;
-  const baseHasSlash = b.endsWith('/');
-  const extraHasSlash = e.startsWith('/');
-  if (baseHasSlash && extraHasSlash) return b + e.slice(1);
-  if (!baseHasSlash && !extraHasSlash) return b + '/' + e;
-  return b + e;
-}
+// 日志逻辑已下沉到 ViewModel
 
 function connect() {
-  if (!selected.value || socket.value) return;
-  const url = joinUrl(selected.value, path.value);
-  const ws = new WebSocket(url);
-  socket.value = ws;
-  runtime.log('ws', `connecting ${url}`);
-
-  ws.onopen = () => {
-    addLog('open', url);
-    runtime.log('ws', `connected ${url}`);
-    const item = runtime.ws.find((x) => x.url === url);
-    if (item) item.connected = true;
-  };
-  ws.onmessage = (ev) => {
-    addLog('recv', ev.data);
-  };
-  ws.onerror = (ev) => {
-    addLog('error', 'WebSocket error');
-    runtime.log('ws', `error ${url}`);
-  };
-  ws.onclose = () => {
-    addLog('close', url);
-    runtime.log('ws', `closed ${url}`);
-    const item = runtime.ws.find((x) => x.url === url);
-    if (item) item.connected = false;
-    if (socket.value === ws) socket.value = null;
-  };
+  if (!selected.value) return;
+  vm.connect(selected.value);
 }
 
-function disconnect() {
-  socket.value?.close();
-}
+function disconnect() { vm.disconnect(); }
 
-function send() {
-  if (!socket.value) return;
-  let payload: string = outgoing.value;
-  try {
-    // 尝试格式化为 JSON 字符串，方便可读
-    const asObj = JSON.parse(outgoing.value);
-    payload = JSON.stringify(asObj);
-  } catch {
-    // ignore, 以文本发送
-  }
-  socket.value.send(payload);
-  addLog('send', payload);
-}
+function send() { vm.send(); }
 
-onBeforeUnmount(() => {
-  socket.value?.close();
-  socket.value = null;
-});
+// 生命周期清理已由 ViewModel 处理
 </script>

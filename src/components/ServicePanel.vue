@@ -11,6 +11,7 @@
 <script setup lang="ts">
 import { computed, h } from 'vue';
 import { useRuntimeStore } from '../stores/runtime';
+import * as api from '../api/common';
 import { NDataTable, NSpace, NH3, NButton, NTag } from 'naive-ui';
 
 const runtime = useRuntimeStore();
@@ -57,7 +58,7 @@ const wsData = computed(() => runtime.ws);
 async function ping(row: any) {
   const started = performance.now();
   try {
-    const res = await fetch(row.url, { method: 'GET' });
+    const res = await api.health(row.url);
     const ok = res.ok;
     row.lastOk = ok;
     row.latency = Math.round(performance.now() - started);

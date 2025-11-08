@@ -1,6 +1,6 @@
 <template>
   <n-space vertical>
-    <n-h3>当前运行时配置（/config.json 或 VITE_）</n-h3>
+    <n-h3>当前运行时配置（VITE_ 环境变量）</n-h3>
     <n-code :code="rtJson" language="json" :word-wrap="true" />
   </n-space>
   </template>
