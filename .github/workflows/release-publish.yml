@@ -155,8 +155,8 @@ jobs:
         with:
           branch: chore/release-changelog-${{ github.event.release.tag_name }}
           delete-branch: true
-          commit-message: chore(changelog): update for ${{ github.event.release.tag_name }}
-          title: chore(changelog): update for ${{ github.event.release.tag_name }}
+          commit-message: "chore(changelog): update for ${{ github.event.release.tag_name }}"
+          title: "chore(changelog): update for ${{ github.event.release.tag_name }}"
           body: |
             Update CHANGELOG for release ${{ github.event.release.tag_name }}.
             This PR was created automatically after publishing the release.
