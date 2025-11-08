@@ -6,55 +6,76 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  update_release_draft:
-    name: Update Release Draft
+  verify:
+    name: Lint and Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Release Drafter
-        id: rd
-        uses: release-drafter/release-drafter@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build
+
+  releaseDraft:
+    name: Release draft
+    needs: [ verify ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Compute version from package.json
+        id: ver
+        run: |
+          VERSION="v$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Remove old release drafts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/{owner}/{repo}/releases \
+            --jq '.[] | select(.draft == true) | .id' \
+            | xargs -I '{}' gh api -X DELETE repos/{owner}/{repo}/releases/{} || true
 
-      - name: Merge CHANGELOG Unreleased into draft
-        if: steps.rd.outputs.id != ''
-        uses: actions/github-script@v7
+      - name: Prepare release notes from CHANGELOG
+        run: |
+          if [ -f CHANGELOG.md ]; then
+            awk '/^## \[Unreleased\]/{flag=1;next}/^## \[/{flag=0}flag' CHANGELOG.md | sed '/^$/d' > RELEASE_NOTES.txt
+          fi
+          if [ ! -s RELEASE_NOTES.txt ]; then
+            echo "Maintenance release." > RELEASE_NOTES.txt
+          fi
+
+      - name: Create draft release
         env:
-          RELEASE_ID: ${{ steps.rd.outputs.id }}
-          RD_BODY: ${{ steps.rd.outputs.body }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = 'CHANGELOG.md';
-            let unreleased = '';
-            if (fs.existsSync(path)) {
-              const text = fs.readFileSync(path, 'utf8');
-              const lines = text.split(/\r?\n/);
-              const start = lines.findIndex(l => /^##\s*\[?Unreleased\]?\s*$/i.test(l.trim()));
-              if (start >= 0) {
-                let i = start + 1;
-                const buf = [];
-                for (; i < lines.length; i++) {
-                  const line = lines[i];
-                  if (/^##\s+/.test(line)) break;
-                  buf.push(line);
-                }
-                unreleased = buf.join('\n').trim();
-              }
-            }
-
-            const rdBody = process.env.RD_BODY || '';
-            const body = (unreleased ? `## Unreleased\n\n${unreleased}\n\n` : '') + (rdBody || '');
-
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: Number(process.env.RELEASE_ID),
-              body,
-            });
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          gh release create "$VERSION" --draft --title "$VERSION" --notes-file RELEASE_NOTES.txt || true
