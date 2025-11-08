@@ -69,24 +69,44 @@ jobs:
       - name: Update CHANGELOG.md from Release notes
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
-          RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_BODY: ${{ github.event.release.body }}
         run: |
-          DATE=$(date -u +%Y-%m-%d)
-          echo "Updating CHANGELOG.md for ${TAG_NAME} (${DATE})"
-          HEADER="## ${TAG_NAME} - ${DATE}"
-          echo "$HEADER" > NEW_CHANGELOG.md
-          echo "" >> NEW_CHANGELOG.md
-          if [ -n "$RELEASE_BODY" ]; then
-            printf "%s\n\n" "$RELEASE_BODY" >> NEW_CHANGELOG.md
-          else
-            echo "- No release notes provided." >> NEW_CHANGELOG.md
-            echo "" >> NEW_CHANGELOG.md
-          fi
-          if [ -f CHANGELOG.md ]; then
-            cat CHANGELOG.md >> NEW_CHANGELOG.md
-          fi
-          mv NEW_CHANGELOG.md CHANGELOG.md
+          node <<'EOS'
+          const fs = require('fs');
+          const path = 'CHANGELOG.md';
+          const tag = process.env.TAG_NAME || 'v0.0.0';
+          const body = (process.env.RELEASE_BODY || '').trim() || '- No release notes provided.';
+          const date = new Date().toISOString().slice(0,10);
+          const header = `## ${tag} - ${date}`;
+
+          if (!fs.existsSync(path)) {
+            fs.writeFileSync(path, `# Changelog\n\n## [Unreleased]\n\n${header}\n\n${body}\n`);
+            process.exit(0);
+          }
+
+          const text = fs.readFileSync(path, 'utf8');
+          const lines = text.split(/\r?\n/);
+          const unreleasedIdx = lines.findIndex(l => /^##\s*\[?Unreleased\]?\s*$/i.test(l.trim()));
+
+          if (unreleasedIdx === -1) {
+            // Fallback: prepend
+            const out = `${header}\n\n${body}\n\n${text}`;
+            fs.writeFileSync(path, out);
+            process.exit(0);
+          }
+
+          // Find end of Unreleased section (next header or EOF)
+          let end = lines.length;
+          for (let i = unreleasedIdx + 1; i < lines.length; i++) {
+            if (/^##\s+/.test(lines[i])) { end = i; break; }
+          }
+
+          const before = lines.slice(0, unreleasedIdx + 1).join('\n'); // keep the Unreleased header only
+          const after = lines.slice(end).join('\n');
+          const newBlock = `${header}\n\n${body}`;
+          const out = `${before}\n\n${newBlock}\n\n${after}`.replace(/\n{3,}/g, '\n\n');
+          fs.writeFileSync(path, out.trimEnd() + '\n');
+          EOS
 
       - name: Commit CHANGELOG update
         env:

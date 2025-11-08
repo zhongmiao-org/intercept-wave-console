@@ -13,7 +13,48 @@ jobs:
     name: Update Release Draft
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Run Release Drafter
+        id: rd
         uses: release-drafter/release-drafter@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge CHANGELOG Unreleased into draft
+        if: steps.rd.outputs.id != ''
+        uses: actions/github-script@v7
+        env:
+          RELEASE_ID: ${{ steps.rd.outputs.id }}
+          RD_BODY: ${{ steps.rd.outputs.body }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'CHANGELOG.md';
+            let unreleased = '';
+            if (fs.existsSync(path)) {
+              const text = fs.readFileSync(path, 'utf8');
+              const lines = text.split(/\r?\n/);
+              const start = lines.findIndex(l => /^##\s*\[?Unreleased\]?\s*$/i.test(l.trim()));
+              if (start >= 0) {
+                let i = start + 1;
+                const buf = [];
+                for (; i < lines.length; i++) {
+                  const line = lines[i];
+                  if (/^##\s+/.test(line)) break;
+                  buf.push(line);
+                }
+                unreleased = buf.join('\n').trim();
+              }
+            }
+
+            const rdBody = process.env.RD_BODY || '';
+            const body = (unreleased ? `## Unreleased\n\n${unreleased}\n\n` : '') + (rdBody || '');
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: Number(process.env.RELEASE_ID),
+              body,
+            });
