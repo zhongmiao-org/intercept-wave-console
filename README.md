@@ -7,7 +7,7 @@
 - 项目主页（Console）：https://github.com/zhongmiao-org/intercept-wave-console
 - 插件（JetBrains 平台）：https://github.com/zhongmiao-org/intercept-wave
 - 插件（VS Code 平台）：https://github.com/zhongmiao-org/intercept-wave-vscode
-- 上游服务源码：请提供仓库地址（例如 `intercept-wave-upstream`）以便补充链接
+- 上游测试服务 (Upstream)：https://github.com/zhongmiao-org/intercept-wave-upstream
 
 ## 相关组件
 
