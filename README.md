@@ -1,18 +1,19 @@
-# intercept-wave-console 项目说明（前端测试控制台）
+# intercept-wave-console（前端测试控制台）
 
-本文档用于统一描述前端测试控制台（intercept-wave-console）的目标、架构、打包与部署方式，并记录与主项目相关的本地路径，方便在清除上下文后为 AI 或协作者提供完整参考。
+本文档描述前端测试控制台（intercept-wave-console）的目标、架构、打包与部署方式。本文不包含任何本地磁盘路径，适用于公开开源场景。
 
-## 主项目与本地路径
+## 项目地址
 
-- 插件（代理中间件，主项目）
-  - 路径：/Users/mac/Code/workspace/Mine/intercept-wave
-  - 作用：作为前后端连接的桥梁，转发请求并处理跨域，承接上游服务与前端交互。
-- 上游服务（已发布到 GHCR）
-  - 路径：/Users/mac/Code/workspace/Mine/intercept-wave-upstream
-  - 作用：提供 3 个 HTTP 服务与 3 个 WS 服务，供插件转发与集成测试。
-- 前端测试控制台（本文档项目）
-  - 路径：/Users/mac/Code/workspace/Mine/intercept-wave-console
-  - 作用：集成本地与集成测试的页面入口，仅访问插件暴露的接口与 WS，由插件完成跨域与转发。
+- 项目主页（Console）：https://github.com/zhongmiao-org/intercept-wave-console
+- 插件（JetBrains 平台）：https://github.com/zhongmiao-org/intercept-wave
+- 插件（VS Code 平台）：https://github.com/zhongmiao-org/intercept-wave-vscode
+- 上游服务源码：请提供仓库地址（例如 `intercept-wave-upstream`）以便补充链接
+
+## 相关组件
+
+- 插件（代理中间件）：作为前后端连接的桥梁，转发请求并处理跨域，承接上游服务与前端交互。
+- 上游服务（已发布到 GHCR）：提供 3 个 HTTP 服务与 3 个 WS 服务，供插件转发与集成测试。
+- 前端测试控制台（本项目）：集成本地与集成测试的页面入口，仅访问插件暴露的接口与 WS，由插件完成跨域与转发。
 
 ## 项目定位与目标
 
@@ -256,4 +257,4 @@ open http://localhost:8080
 
 ---
 
-如需我基于此文档直接初始化 `intercept-wave-console` 的项目脚手架（Vite + Naive UI）与示例页面、并附带上述 Dockerfile/entrypoint/config 模版，请告知，我可以一并创建。
+如需我基于此文档直接初始化 `intercept-wave-console` 的项目脚手架（Vite + Naive UI）与示例页面，并附带上述 Dockerfile/entrypoint/config 模版，请在 Issue 中提出或发起 PR。

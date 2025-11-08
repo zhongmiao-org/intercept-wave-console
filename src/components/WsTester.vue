@@ -40,7 +40,7 @@ import { NForm, NFormItem, NInput, NButton, NSelect, NSpace, NCode, NH3 } from '
 const runtime = useRuntimeStore();
 const selected = ref<string | null>(null);
 const vm = useWsTesterVM();
-const { socket, outgoing, logs, path, token, interval } = vm;
+const { socket, outgoing, path, token, interval } = vm;
 
 const wsOptions = computed(() => runtime.ws.map((w) => ({ label: `${w.name} (${w.url})`, value: w.url })));
 const logText = vm.logText;

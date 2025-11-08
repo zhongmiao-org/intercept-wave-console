@@ -20,11 +20,10 @@ export function withQuery(raw: string, q: Record<string, string | undefined>): s
   } catch {
     const hasQ = raw.includes('?');
     const kv = Object.entries(q)
-      .filter(([_, v]) => v != null && v !== '')
+      .filter(([, v]) => v != null && v !== '')
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&');
     if (!kv) return raw;
     return raw + (hasQ ? '&' : '?') + kv;
   }
 }
-
