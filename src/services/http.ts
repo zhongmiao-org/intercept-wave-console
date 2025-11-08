@@ -21,7 +21,7 @@ export async function httpRequest<T = unknown>(url: string, init: HttpInit = {})
   const expectJson = init.expectJson ?? contentType.includes('application/json');
 
   if (expectJson) {
-    let text = await res.text();
+    const text = await res.text();
     let data: any = undefined;
     try { data = JSON.parse(text); } catch { /* keep text */ }
     return { ok: res.ok, status: res.status, ms, headers, data, text };

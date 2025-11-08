@@ -17,6 +17,12 @@ module.exports = {
   rules: {
     'vue/multi-word-component-names': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    // Relax Vue template style rules to avoid noisy warnings on UI markup
+    'vue/max-attributes-per-line': 'off',
+    'vue/html-indent': 'off',
+    'vue/singleline-html-element-content-newline': 'off',
+    'vue/attributes-order': 'off',
+    'vue/html-quotes': 'off',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
