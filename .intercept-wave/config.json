@@ -11,6 +11,28 @@
             "globalCookie": "",
             "enabled": true,
             "mockApis": []
+        },
+        {
+            "id": "7b8cf505-0010-44ed-8122-006d3002ba5d",
+            "name": "Order Service",
+            "port": 8889,
+            "interceptPrefix": "/order-api",
+            "baseUrl": "http://localhost:9001",
+            "stripPrefix": true,
+            "globalCookie": "",
+            "enabled": true,
+            "mockApis": []
+        },
+        {
+            "id": "e20de09d-1f73-4b1a-a0fd-cb35ebe330b6",
+            "name": "Pay Service",
+            "port": 8890,
+            "interceptPrefix": "/pay-api",
+            "baseUrl": "http://localhost:9002",
+            "stripPrefix": true,
+            "globalCookie": "",
+            "enabled": true,
+            "mockApis": []
         }
     ]
 }
