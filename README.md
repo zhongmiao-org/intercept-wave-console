@@ -78,6 +78,20 @@ WAVE_PLUGIN_WS_3=ws(s)://...
 WAVE_WS_TOKEN=zhongmiao-org-token
 ```
 
+仓库内提供的示例 `.env`/`.env.local`（与本地开发配置一致）：
+
+```
+WAVE_PLUGIN_HTTP_1=http://localhost:8888/api
+WAVE_PLUGIN_HTTP_2=http://localhost:8889/order-api
+WAVE_PLUGIN_HTTP_3=http://localhost:8890/pay-api
+
+WAVE_PLUGIN_WS_1=ws://localhost:8891
+WAVE_PLUGIN_WS_2=ws://localhost:8892
+WAVE_PLUGIN_WS_3=ws://localhost:8893
+
+WAVE_WS_TOKEN=zhongmiao-org-token
+```
+
 页面初始化时读取 `import.meta.env.*`（见 `src/lib/config.ts`），并在 UI 中显示当前生效配置。
 
 注意：Vite 的 `import.meta.env` 在“构建时”决定，运行时容器的环境变量不会影响已生成的静态文件。为支持“运行时注入”，本项目在容器启动时生成 `/usr/share/nginx/html/config.js`，页面优先读取 `window.__APP_CONFIG__`。
@@ -103,6 +117,7 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx","-g","daemon off;"]
+```
 
 方式1：构建时注入（可选）——通过 `--build-arg` 注入 Vite 环境变量（支持 `WAVE_` 前缀）：
 
@@ -137,7 +152,6 @@ ui:
     - WS_TOKEN=zhongmiao-org-token
   depends_on:
     - plugin
-```
 ```
 
 - 构建与推送（示例）：
@@ -203,7 +217,9 @@ services:
 - 初始化：
   - `npm i` / `pnpm i` / `yarn`
 - 开发：
-  - 本地覆盖使用 `.env.local`（已提供示例值，指向插件统一端口并带示例前缀 `/api/a`、`/ws/a`）。
+  - 本地覆盖使用 `.env.local`（本仓库已提供示例值）。示例将 3 个 HTTP 与 3 个 WS 分别指向本机不同端口，并携带 HTTP 基础路径前缀：
+    - HTTP：`http://localhost:8888/api`、`http://localhost:8889/order-api`、`http://localhost:8890/pay-api`
+    - WS：`ws://localhost:8891`、`ws://localhost:8892`、`ws://localhost:8893`
   - `npm run dev` 启动 Vite，前端只读取 `import.meta.env.*`。
   - 在“HTTP/WS 测试”中，路径与上游文档一致（如 `/health`、`/ws/echo` 等）。
 

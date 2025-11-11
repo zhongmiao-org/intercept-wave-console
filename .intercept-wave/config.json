@@ -1,38 +1,81 @@
 {
-    "version": "3.0",
+    "version": "3.1",
     "proxyGroups": [
         {
             "id": "a3c501b2-15f1-4e41-b471-6057cb5ee1cd",
             "name": "User Service",
+            "protocol": "HTTP",
             "port": 8888,
             "interceptPrefix": "/api",
             "baseUrl": "http://localhost:9000",
             "stripPrefix": true,
             "globalCookie": "",
             "enabled": true,
-            "mockApis": []
+            "mockApis": [],
+            "wsBaseUrl": null,
+            "wsInterceptPrefix": null,
+            "wsManualPush": true,
+            "wsPushRules": [],
+            "wssEnabled": false,
+            "wssKeystorePath": null,
+            "wssKeystorePassword": null
         },
         {
             "id": "7b8cf505-0010-44ed-8122-006d3002ba5d",
             "name": "Order Service",
+            "protocol": "HTTP",
             "port": 8889,
             "interceptPrefix": "/order-api",
             "baseUrl": "http://localhost:9001",
             "stripPrefix": true,
             "globalCookie": "",
             "enabled": true,
-            "mockApis": []
+            "mockApis": [],
+            "wsBaseUrl": null,
+            "wsInterceptPrefix": null,
+            "wsManualPush": true,
+            "wsPushRules": [],
+            "wssEnabled": false,
+            "wssKeystorePath": null,
+            "wssKeystorePassword": null
         },
         {
             "id": "e20de09d-1f73-4b1a-a0fd-cb35ebe330b6",
             "name": "Pay Service",
+            "protocol": "HTTP",
             "port": 8890,
             "interceptPrefix": "/pay-api",
             "baseUrl": "http://localhost:9002",
             "stripPrefix": true,
             "globalCookie": "",
             "enabled": true,
-            "mockApis": []
+            "mockApis": [],
+            "wsBaseUrl": null,
+            "wsInterceptPrefix": null,
+            "wsManualPush": true,
+            "wsPushRules": [],
+            "wssEnabled": false,
+            "wssKeystorePath": null,
+            "wssKeystorePassword": null
+        },
+        {
+            "id": "cdf70a68-7504-483a-8307-10f584f921e4",
+            "name": "User WS",
+            "protocol": "HTTP",
+            "port": 8891,
+            "interceptPrefix": "/api",
+            "baseUrl": "http://localhost:8080",
+            "stripPrefix": true,
+            "globalCookie": "",
+            "enabled": true,
+            "mockApis": [],
+            "wsBaseUrl": null,
+            "wsInterceptPrefix": null,
+            "wsManualPush": true,
+            "wsPushRules": [],
+            "wssEnabled": false,
+            "wssKeystorePath": null,
+            "wssKeystorePassword": null
         }
     ]
 }
