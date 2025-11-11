@@ -123,19 +123,19 @@ CMD ["nginx","-g","daemon off;"]
 
 ```bash
 docker build \
-  --build-arg WAVE_PLUGIN_HTTP_1=http://plugin:9000 \
-  --build-arg WAVE_PLUGIN_HTTP_2=http://plugin:9000 \
-  --build-arg WAVE_PLUGIN_HTTP_3=http://plugin:9000 \
-  --build-arg WAVE_PLUGIN_WS_1=ws://plugin:9000 \
-  --build-arg WAVE_PLUGIN_WS_2=ws://plugin:9000 \
-  --build-arg WAVE_PLUGIN_WS_3=ws://plugin:9000 \
+  --build-arg WAVE_PLUGIN_HTTP_1=http://localhost:8888/api \
+  --build-arg WAVE_PLUGIN_HTTP_2=http://localhost:8889/order-api \
+  --build-arg WAVE_PLUGIN_HTTP_3=http://localhost:8890/pay-api \
+  --build-arg WAVE_PLUGIN_WS_1=ws://localhost:8891 \
+  --build-arg WAVE_PLUGIN_WS_2=ws://localhost:8892 \
+  --build-arg WAVE_PLUGIN_WS_3=ws://localhost:8893 \
   --build-arg WAVE_WS_TOKEN=zhongmiao-org-token \
   -t ghcr.io/<owner>/intercept-wave-console:<tag> .
 ```
 
 也可在 Dockerfile 构建阶段复制特定环境的 `.env`（例如 `.env.prod`）覆盖默认 `.env`，效果等同于 `--build-arg`。
 
-方式2：运行时注入（推荐）——通过 docker-compose/environment 设置变量，由入口脚本生成 config.js：
+方式2：运行时注入（推荐）——通过 docker-compose/environment 设置变量，由入口脚本生成 config.js（以下示例与仓库内 `.env` 保持一致）：
 
 ```yaml
 ui:
@@ -143,15 +143,13 @@ ui:
   ports:
     - "8080:80"   # 容器内监听 80，对外映射到 8080
   environment:
-    - HTTP_1=http://plugin:9000
-    - HTTP_2=http://plugin:9000
-    - HTTP_3=http://plugin:9000
-    - WS_1=ws://plugin:9000
-    - WS_2=ws://plugin:9000
-    - WS_3=ws://plugin:9000
+    - HTTP_1=http://localhost:8888/api
+    - HTTP_2=http://localhost:8889/order-api
+    - HTTP_3=http://localhost:8890/pay-api
+    - WS_1=ws://localhost:8891
+    - WS_2=ws://localhost:8892
+    - WS_3=ws://localhost:8893
     - WS_TOKEN=zhongmiao-org-token
-  depends_on:
-    - plugin
 ```
 
 - 构建与推送（示例）：
@@ -168,9 +166,9 @@ docker push $IMAGE
 
 > 说明：`GHCR_TOKEN` 需具备 `write:packages` 权限，可用 GitHub PAT。
 
-## docker-compose 集成（无反代，浏览器直连插件）
+## docker-compose 集成（不包含插件）
 
-以下示例将上游、插件、前端置于同一网络。前端容器仅对外暴露 80 端口，用于访问页面。浏览器通过 `localhost:9000` 直连“插件”，由插件完成跨域处理与上游转发。
+以下示例仅包含“上游服务 + 前端 UI”。插件作为 IDE/编辑器的本地插件运行，不纳入 compose。前端容器仅对外暴露 80 端口用于访问页面；UI 通过环境变量指向你本机或外部的插件/代理地址（示例与 `.env` 一致：`localhost:8888/8889/8890` 和 `8891/8892/8893`）。
 
 ```yaml
 # docker-compose.yml
@@ -182,35 +180,26 @@ services:
       - "9101:9101"
       - "9102:9102"
 
-  plugin:
-    image: ghcr.io/<owner>/intercept-wave:<tag>
-    environment:
-      - UPSTREAM_HTTP_1=http://upstream:9100
-      - UPSTREAM_HTTP_2=http://upstream:9101
-      - UPSTREAM_HTTP_3=http://upstream:9102
-      - UPSTREAM_WS_1=ws://upstream:9100
-      - UPSTREAM_WS_2=ws://upstream:9101
-      - UPSTREAM_WS_3=ws://upstream:9102
-      - CORS_ALLOW_ORIGINS=*
-    ports:
-      - "9000:9000"  # 插件对外 HTTP/WS 端口
-    depends_on:
-      - upstream
-
   ui:
     image: ghcr.io/<owner>/intercept-wave-console:<tag>
     ports:
       - "8080:80"
-    depends_on:
-      - plugin
+    environment:
+      - HTTP_1=http://localhost:8888/api
+      - HTTP_2=http://localhost:8889/order-api
+      - HTTP_3=http://localhost:8890/pay-api
+      - WS_1=ws://localhost:8891
+      - WS_2=ws://localhost:8892
+      - WS_3=ws://localhost:8893
+      - WS_TOKEN=zhongmiao-org-token
     # 如需在容器构建时自定义 .env，可派生镜像或在构建阶段 COPY 自定义 .env
 ```
 
 - 启动流程：
-  - `docker compose up -d upstream plugin ui`
-  - 打开 `http://localhost:8080`，前端优先使用运行时生成的 `config.js` 访问插件。
-  - 路径与方法与上游文档保持一致（仅 host:port 指向插件）。
-  - 确认插件已处理 HTTP 与 WS 的跨域（包含 101 升级场景）。
+  - `docker compose up -d upstream ui`
+  - 打开 `http://localhost:8080`，前端优先使用运行时生成的 `config.js`。
+  - 路径与方法与上游文档保持一致；UI 通过环境变量指向你本机运行的插件/代理（或直连上游，视需而定）。
+  - 若使用插件转发，请确保其已处理 HTTP 与 WS 的跨域（含 101 升级）。
 
 ## 本地开发与调试
 
@@ -263,13 +252,13 @@ echo $GHCR_TOKEN | docker login ghcr.io -u <owner> --password-stdin
 docker push ghcr.io/<owner>/intercept-wave-console:<tag>
 ```
 
-2) 使用 docker-compose 一键拉起：
+2) 使用 docker-compose 一键拉起（不包含插件）：
 ```bash
-docker compose up -d upstream plugin ui
+docker compose up -d upstream ui
 open http://localhost:8080
 ```
 
-3) 启动插件（若未随 compose 一起启动或需要先行拉起），确保其监听 9000 并已开启 CORS。
+3) 若使用本机插件作为代理，请确保其已启动并允许跨域；或根据需要将 UI 环境变量指向直连的上游服务。
 
 ---
 

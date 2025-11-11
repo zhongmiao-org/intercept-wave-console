@@ -44,7 +44,7 @@ export function useWsTesterVM() {
       if (item) item.connected = true;
     };
     ws.onmessage = (ev) => { addLog('recv', ev.data); };
-    ws.onerror = (ev: Event) => {
+    ws.onerror = () => {
       try {
         addLog('error', { url, readyState: ws.readyState });
       } catch {

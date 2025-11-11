@@ -73,7 +73,7 @@ const logText = vm.logText;
 
 // 根据选择的路径智能设置 interval 默认值（/ws/ticker 常用 1000ms）
 watch(path, (v) => {
-  if (typeof v === 'string' && v.includes('/ws/ticker')) {
+  if (v.includes('/ws/ticker')) {
     if (!interval.value) interval.value = '1000';
   }
 });
