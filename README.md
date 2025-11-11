@@ -66,16 +66,16 @@
 - `.env`：默认值（构建时生效）
 - `.env.local`：本地开发覆盖（不提交版本库）
 
-支持的变量：
+支持的变量（前缀改为 WAVE_）：
 
 ```
-VITE_PLUGIN_HTTP_1=http(s)://...
-VITE_PLUGIN_HTTP_2=http(s)://...
-VITE_PLUGIN_HTTP_3=http(s)://...
-VITE_PLUGIN_WS_1=ws(s)://...
-VITE_PLUGIN_WS_2=ws(s)://...
-VITE_PLUGIN_WS_3=ws(s)://...
-VITE_WS_TOKEN=zhongmiao-org-token
+WAVE_PLUGIN_HTTP_1=http(s)://...
+WAVE_PLUGIN_HTTP_2=http(s)://...
+WAVE_PLUGIN_HTTP_3=http(s)://...
+WAVE_PLUGIN_WS_1=ws(s)://...
+WAVE_PLUGIN_WS_2=ws(s)://...
+WAVE_PLUGIN_WS_3=ws(s)://...
+WAVE_WS_TOKEN=zhongmiao-org-token
 ```
 
 页面初始化时读取 `import.meta.env.*`（见 `src/lib/config.ts`），并在 UI 中显示当前生效配置。
@@ -104,17 +104,17 @@ EXPOSE 80
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx","-g","daemon off;"]
 
-方式1：构建时注入（可选）——通过 `--build-arg` 注入 Vite 环境变量（带 `VITE_` 前缀）：
+方式1：构建时注入（可选）——通过 `--build-arg` 注入 Vite 环境变量（支持 `WAVE_` 前缀）：
 
 ```bash
 docker build \
-  --build-arg VITE_PLUGIN_HTTP_1=http://plugin:9000 \
-  --build-arg VITE_PLUGIN_HTTP_2=http://plugin:9000 \
-  --build-arg VITE_PLUGIN_HTTP_3=http://plugin:9000 \
-  --build-arg VITE_PLUGIN_WS_1=ws://plugin:9000 \
-  --build-arg VITE_PLUGIN_WS_2=ws://plugin:9000 \
-  --build-arg VITE_PLUGIN_WS_3=ws://plugin:9000 \
-  --build-arg VITE_WS_TOKEN=zhongmiao-org-token \
+  --build-arg WAVE_PLUGIN_HTTP_1=http://plugin:9000 \
+  --build-arg WAVE_PLUGIN_HTTP_2=http://plugin:9000 \
+  --build-arg WAVE_PLUGIN_HTTP_3=http://plugin:9000 \
+  --build-arg WAVE_PLUGIN_WS_1=ws://plugin:9000 \
+  --build-arg WAVE_PLUGIN_WS_2=ws://plugin:9000 \
+  --build-arg WAVE_PLUGIN_WS_3=ws://plugin:9000 \
+  --build-arg WAVE_WS_TOKEN=zhongmiao-org-token \
   -t ghcr.io/<owner>/intercept-wave-console:<tag> .
 ```
 

@@ -17,15 +17,15 @@ function fromWindow(): RuntimeConfig | null {
 
 function fromEnv(): RuntimeConfig | null {
   const env = import.meta.env || {};
-  const httpRaw = [env.VITE_PLUGIN_HTTP_1, env.VITE_PLUGIN_HTTP_2, env.VITE_PLUGIN_HTTP_3];
-  const wsRaw = [env.VITE_PLUGIN_WS_1, env.VITE_PLUGIN_WS_2, env.VITE_PLUGIN_WS_3];
+  const httpRaw = [env.WAVE_PLUGIN_HTTP_1, env.WAVE_PLUGIN_HTTP_2, env.WAVE_PLUGIN_HTTP_3];
+  const wsRaw = [env.WAVE_PLUGIN_WS_1, env.WAVE_PLUGIN_WS_2, env.WAVE_PLUGIN_WS_3];
   const http = httpRaw
     .map((url, i) => ({ name: `svc${String.fromCharCode(65 + i)}`, url }))
     .filter((x) => !!x.url) as { name: string; url: string }[];
   const ws = wsRaw
     .map((url, i) => ({ name: `ws${String.fromCharCode(65 + i)}`, url }))
     .filter((x) => !!x.url) as { name: string; url: string }[];
-  const wsToken = env.VITE_WS_TOKEN as string | undefined;
+  const wsToken = env.WAVE_WS_TOKEN as string | undefined;
   if (http.length || ws.length || wsToken) return { http, ws, wsToken };
   return null;
 }
@@ -34,7 +34,7 @@ export async function loadConfig(): Promise<RuntimeConfig> {
   // 1) 运行时 window.__APP_CONFIG__（Docker 入口脚本渲染）
   const winConf = fromWindow();
   if (winConf) return { wsToken: 'zhongmiao-org-token', ...winConf };
-  // 2) VITE_ 环境变量（本地开发构建时）
+  // 2) WAVE_ 环境变量（本地开发构建时）
   const envConf = fromEnv();
   if (envConf) return { wsToken: 'zhongmiao-org-token', ...envConf };
   // Final fallback: localhost 默认值，便于即开即用
