@@ -89,7 +89,7 @@ function wsPing(row: any) {
   let settled = false;
   try {
     const token = runtime.config?.wsToken;
-    const { url, socket } = connectWs(row.url, '', { token });
+    const { socket } = connectWs(row.url, '', { token });
 
     const finishOk = () => {
       if (settled) return;
@@ -97,7 +97,9 @@ function wsPing(row: any) {
       row.lastOk = true;
       row.latency = Math.round(performance.now() - started);
       runtime.log('ws', `Ping ${row.name} -> OK ${row.latency}ms`);
-      try { socket.close(1000, 'ping'); } catch {}
+      try { socket.close(1000, 'ping'); } catch {
+        console.error(`连接失败`)
+      }
     };
     const finishErr = (reason?: string) => {
       if (settled) return;
@@ -106,7 +108,9 @@ function wsPing(row: any) {
       row.latency = undefined;
       row.lastError = reason || 'WebSocket error';
       runtime.log('ws', `Ping ${row.name} -> ERROR ${row.lastError}`);
-      try { socket.close(); } catch {}
+      try { socket.close(); } catch {
+        console.error(`连接失败`)
+      }
     };
 
     const timer = setTimeout(() => finishErr('timeout'), 4000);
