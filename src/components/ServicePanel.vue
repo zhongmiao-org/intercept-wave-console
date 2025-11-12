@@ -13,6 +13,7 @@ import { computed, h } from 'vue';
 import { useRuntimeStore } from '../stores/runtime';
 import * as api from '../api/common';
 import { NDataTable, NSpace, NH3, NButton, NTag } from 'naive-ui';
+import { connectWs } from '../services/ws';
 
 const runtime = useRuntimeStore();
 
@@ -42,12 +43,24 @@ const wsColumns = [
   { title: '名称', key: 'name' },
   { title: 'URL', key: 'url' },
   {
-    title: '连接',
-    key: 'connected',
+    title: '状态',
+    key: 'status',
     render(row: any) {
-      const type = row.connected ? 'success' : 'warning';
-      const text = row.connected ? '已连接' : '未连接';
+      const ok = row.lastOk === true;
+      const type = ok ? 'success' : row.lastOk === false ? 'error' : 'default';
+      const text = ok ? `OK ${row.latency ?? '-'}ms` : row.lastOk === false ? 'ERROR' : '未知';
       return h(NTag as any, { type }, { default: () => text });
+    }
+  },
+  {
+    title: '操作',
+    key: 'ws-actions',
+    render(row: any) {
+      return h(
+        NButton as any,
+        { size: 'small', onClick: () => wsPing(row) },
+        { default: () => 'Ping' }
+      );
     }
   }
 ];
@@ -68,6 +81,52 @@ async function ping(row: any) {
     row.latency = undefined;
     row.lastError = String(e?.message || e);
     runtime.log('http', `Ping ${row.name} -> ERROR: ${row.lastError}`);
+  }
+}
+
+function wsPing(row: any) {
+  const started = performance.now();
+  let settled = false;
+  try {
+    const token = runtime.config?.wsToken;
+    const { socket } = connectWs(row.url, '', { token });
+
+    const finishOk = () => {
+      if (settled) return;
+      settled = true;
+      row.lastOk = true;
+      row.latency = Math.round(performance.now() - started);
+      runtime.log('ws', `Ping ${row.name} -> OK ${row.latency}ms`);
+      try { socket.close(1000, 'ping'); } catch {
+        console.error(`连接失败`)
+      }
+    };
+    const finishErr = (reason?: string) => {
+      if (settled) return;
+      settled = true;
+      row.lastOk = false;
+      row.latency = undefined;
+      row.lastError = reason || 'WebSocket error';
+      runtime.log('ws', `Ping ${row.name} -> ERROR ${row.lastError}`);
+      try { socket.close(); } catch {
+        console.error(`连接失败`)
+      }
+    };
+
+    const timer = setTimeout(() => finishErr('timeout'), 4000);
+    socket.onopen = () => { clearTimeout(timer); finishOk(); };
+    socket.onerror = () => { clearTimeout(timer); finishErr(); };
+    socket.onclose = (ev) => {
+      clearTimeout(timer);
+      // If close before open and not settled -> treat as error
+      if (!settled) finishErr(`code=${ev.code}${ev.reason ? ` reason=${ev.reason}` : ''}`);
+    };
+  } catch (e: any) {
+    settled = true;
+    row.lastOk = false;
+    row.latency = undefined;
+    row.lastError = String(e?.message || e);
+    runtime.log('ws', `Ping ${row.name} -> ERROR ${row.lastError}`);
   }
 }
 </script>

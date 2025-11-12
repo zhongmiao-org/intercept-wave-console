@@ -14,6 +14,8 @@ export type WsStatus = {
   name: string;
   url: string;
   connected: boolean;
+  latency?: number;
+  lastOk?: boolean;
   lastError?: string;
 };
 

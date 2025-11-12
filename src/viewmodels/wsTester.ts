@@ -11,6 +11,7 @@ export function useWsTesterVM() {
   });
   const interval = ref('');
   const path = ref('');
+  const params = ref<Array<{ key: string; value: string }>>([]);
   const socket = ref<WebSocket | null>(null);
   const outgoing = ref('');
   const logs = ref<string[]>([]);
@@ -25,7 +26,14 @@ export function useWsTesterVM() {
 
   function connect(baseUrl: string | null) {
     if (!baseUrl || socket.value) return;
-    const { url, socket: ws } = connectWs(baseUrl, path.value, { token: token.value, interval: interval.value || undefined });
+    const extras: Record<string, string> = Object.fromEntries(
+      params.value.filter((x) => x.key).map((x) => [String(x.key), String(x.value)])
+    );
+    const { url, socket: ws } = connectWs(baseUrl, path.value, {
+      token: token.value,
+      interval: interval.value || undefined,
+      params: extras
+    });
     socket.value = ws;
     runtime.log('ws', `connecting ${url}`);
 
@@ -37,12 +45,16 @@ export function useWsTesterVM() {
     };
     ws.onmessage = (ev) => { addLog('recv', ev.data); };
     ws.onerror = () => {
-      addLog('error', 'WebSocket error');
+      try {
+        addLog('error', { url, readyState: ws.readyState });
+      } catch {
+        addLog('error', 'WebSocket error');
+      }
       runtime.log('ws', `error ${url}`);
     };
-    ws.onclose = () => {
-      addLog('close', url);
-      runtime.log('ws', `closed ${url}`);
+    ws.onclose = (ev: CloseEvent) => {
+      addLog('close', { url, code: ev.code, reason: ev.reason, clean: ev.wasClean });
+      runtime.log('ws', `closed ${url} code=${ev.code}`);
       const item = runtime.ws.find((x) => x.url === baseUrl);
       if (item) item.connected = false;
       if (socket.value === ws) socket.value = null;
@@ -61,6 +73,5 @@ export function useWsTesterVM() {
 
   onBeforeUnmount(() => { socket.value?.close(); socket.value = null; });
 
-  return { token, interval, path, socket, outgoing, logs, logText, connect, disconnect, send };
+  return { token, interval, path, params, socket, outgoing, logs, logText, connect, disconnect, send };
 }
-

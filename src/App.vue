@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider>
+  <n-config-provider :hljs="hljs">
     <n-message-provider>
       <n-space vertical size="large" style="padding: 16px">
         <n-h1>Intercept Wave Console</n-h1>
@@ -39,6 +39,10 @@ import WsTester from './components/WsTester.vue';
 import ConfigView from './components/ConfigView.vue';
 import LogsView from './components/LogsView.vue';
 import { NConfigProvider, NMessageProvider, NAlert, NCard, NSpace, NH1, NTabs, NTabPane } from 'naive-ui';
+// Syntax highlight for <n-code>
+import hljs from 'highlight.js/lib/core';
+import json from 'highlight.js/lib/languages/json';
+hljs.registerLanguage('json', json);
 
 const runtime = useRuntimeStore();
 onMounted(() => runtime.init());

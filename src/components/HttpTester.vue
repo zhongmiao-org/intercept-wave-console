@@ -14,7 +14,15 @@
         </n-radio-group>
       </n-form-item>
       <n-form-item label="路径追加 (可选)">
-        <n-input v-model:value="path" placeholder="例如: /ping 或 ping，留空则不追加" />
+        <n-select
+          v-model:value="path"
+          :options="pathOptions"
+          filterable
+          clearable
+          tag
+          placeholder="可下拉选择或手动输入，如 /echo"
+          style="min-width: 320px"
+        />
       </n-form-item>
       <n-form-item label="Authorization(可选)">
         <n-input v-model:value="auth" placeholder="Bearer ... 或 Basic ..." />
@@ -87,6 +95,10 @@ const presets: PresetItem[] = [
   { label: 'GET /pay-api/checkout (9002)', value: 'checkout', method: 'GET', path: '/pay-api/checkout' }
 ];
 const presetOptions = computed(() => presets.map((p) => ({ label: p.label, value: p.value })));
+const pathOptions = computed(() => {
+  const uniq = Array.from(new Set(presets.map((p) => p.path)));
+  return uniq.map((p) => ({ label: p, value: p }));
+});
 
 function applyPreset(v: string | null) {
   const p = presets.find((x) => x.value === v!);
