@@ -61,7 +61,7 @@
         {
             "id": "cdf70a68-7504-483a-8307-10f584f921e4",
             "name": "User WS",
-            "protocol": "HTTP",
+            "protocol": "WS",
             "port": 8891,
             "interceptPrefix": "/api",
             "baseUrl": "http://localhost:8080",
@@ -69,10 +69,25 @@
             "globalCookie": "",
             "enabled": true,
             "mockApis": [],
-            "wsBaseUrl": null,
-            "wsInterceptPrefix": null,
+            "wsBaseUrl": "ws://localhost:9003",
+            "wsInterceptPrefix": "/ws",
             "wsManualPush": true,
-            "wsPushRules": [],
+            "wsPushRules": [
+                {
+                    "enabled": true,
+                    "path": "/echo",
+                    "eventKey": "action",
+                    "eventValue": "test",
+                    "direction": "both",
+                    "intercept": false,
+                    "mode": "off",
+                    "periodSec": 5,
+                    "message": "{\n    \"message\": \"你好\"\n}",
+                    "timeline": [],
+                    "loop": false,
+                    "onOpenFire": false
+                }
+            ],
             "wssEnabled": false,
             "wssKeystorePath": null,
             "wssKeystorePassword": null
